@@ -1,3 +1,3 @@
 FROM alpine
 
-COPY tomcat-demo-1.0-SNAPSHOT.jar /app.jar
+COPY target/tomcat-demo-1.0-SNAPSHOT.jar /app.jar

@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  annotations:
+    luckincoffee.com/cd-type: k8s
+  name: gray-adjust
+spec:
+  inputs:
+    params:
+    - name: weight
+      description: weight of gray
+  steps:
+  - name: load-balancer
+    image: ubuntu
+    command:
+      - echo
+    args:
+      - "adjust load-balancer weight to ${inputs.params.weight}"
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: run-gray-adjust
+spec:
+  taskRef:
+    name: gray-adjust
+  inputs:
+    params:
+    - name: weight
+      value: "0.1"

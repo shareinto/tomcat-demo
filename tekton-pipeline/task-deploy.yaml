@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  annotations:
+    luckincoffee.com/cd-type: k8s
+  name: k8s-deploy
+spec:
+  steps:
+    - name: deployment
+      image: ubuntu
+      command:
+        - echo
+      args:
+        - "create deployment"
+    - name: ingress
+      image: ubuntu
+      command:
+        - echo
+      args:
+        - "create ingress"

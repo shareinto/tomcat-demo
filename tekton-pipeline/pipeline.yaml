@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: deploy-pipeline
+spec:
+  tasks:
+  - name: gray-deploy
+    taskRef:
+      name: k8s-gray-deploy
+  - name: gray-adjust
+    taskRef:
+      name: gray-adjust
+    params:
+      - name: weight
+        value: "0.1"
+    runAfter:
+      - k8s-gray-deploy
+  - name: gray-online
+    taskRef:
+      name: k8s-gray-online
+    runAfter:
+      - judge
+    conditions:
+      - conditionRef: gray-online-judge

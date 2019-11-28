@@ -1,7 +1,21 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Condition
 metadata:
-  name: gray-online-judge
+  name: manual-judge1
+  annotations:
+    - luckincoffee.com/task-judge: wait #update this value to true/false for judging
+spec:
+ check:
+    image: alpine
+    command: 
+      - echo
+    args:
+      - 'sleep infinite'
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Condition
+metadata:
+  name: manual-judge2
   annotations:
     - luckincoffee.com/task-judge: wait #update this value to true/false for judging
 spec:

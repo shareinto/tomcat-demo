@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: default-pipeline-run
+spec:
+  pipelineRef:
+    name: default-pipeline
+  resources:
+    - name: source-repo
+      resourceRef:
+        name: rules-branch
+    - name: web-image
+      resourceRef:
+        name: image-tomcat-demo

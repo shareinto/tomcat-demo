@@ -1,0 +1,49 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  annotations:
+    luckincoffee.com/cd-type: k8s
+  name: canary-analyze
+spec:
+  inputs:
+    params:
+    - name: canary-analysis
+      description: the config of canary-analysis
+    - name: application
+      description: application name
+    - name: environment
+      description: the environment which deployment is going to apply on
+  steps:
+  - name: apply-temp-deploy
+    image: ubuntu
+    command:
+      - echo
+    args:
+      - "start canary analyze via flagger"
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: run-canary-analyze
+spec:
+  taskRef:
+    name: canary-analyze
+  inputs:
+    params:
+    - name: canary-analysis
+      value: |
+      {
+		    "Interval": 10,
+		    "Threshold": 3,
+		    "MaxWeight": 50,
+		    "StepWeight": 5,
+		    "Metrics": [{
+			    "Name": "request - success-rate",
+			    "Threshold": 99,
+			    "interval": "1m"
+		    }]
+	    }
+    - name: application
+      value: application1
+    - name: environment
+      value: prod

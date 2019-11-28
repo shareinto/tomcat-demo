@@ -1,24 +1,98 @@
 apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
-  name: deploy-pipeline
+  name: default-pipeline
 spec:
+  resources:
+    - name: source-repo
+      type: git
+    - name: web-image
+      type: image
   tasks:
-  - name: gray-deploy
+  - name: build
     taskRef:
-      name: k8s-gray-deploy
-  - name: gray-adjust
-    taskRef:
-      name: gray-adjust
+      name: build-artifacts
     params:
-      - name: weight
-        value: "0.1"
-    runAfter:
-      - k8s-gray-deploy
-  - name: gray-online
+      - name: artifacts-repo
+        value: "luckincoffee.com/nexus/tomcatdemo"
+    resources:
+      inputs:
+        - name: gitspace
+          resource: source-repo
+  - name: push
     taskRef:
-      name: k8s-gray-online
+      name: image-build-and-push
+    params:
+      - name: artifacts-repo
+        value: "luckincoffee.com/nexus/tomcatdemo"
+    resources:
+      outputs:
+        - name: builtImage
+          resource: web-image
     runAfter:
-      - judge
+      - build-artifacts
+  - name: canary-analyze
+    taskRef:
+      name: canary-analyze
+    runAfter:
+      - push
     conditions:
-      - conditionRef: gray-online-judge
+      - conditionRef: manual-judge1
+    resources:
+      inputs:
+        - name: webImage
+          resource: web-image
+          from:
+            - image-build-and-push
+    params:
+    - name: application
+      value: application1
+    - name: environment
+      value: stage
+    - name: command
+      value: ["java"]
+    - name: args
+      value: ["-jar","/webapp.jar"]
+    - name: envs
+      value:
+        - key: JAVA_OPTS
+          value: "-Xmx3072m"
+    - name: canary-analysis
+      value: |
+      {
+		    "Interval": 10,
+		    "Threshold": 3,
+		    "MaxWeight": 50,
+		    "StepWeight": 5,
+		    "Metrics": [{
+			    "Name": "request - success-rate",
+			    "Threshold": 99,
+			    "interval": "1m"
+		    }]
+	    }
+  - name:  deploy
+    taskRef:
+      name: deploy
+    resources:
+      inputs:
+        - name: webImage
+          resource: web-image
+          from:
+            - image-build-and-push
+    params:
+    - name: application
+      value: application1
+    - name: environment
+      value: product
+    - name: command
+      value: ["java"]
+    - name: args
+      value: ["-jar","/webapp.jar"]
+    - name: envs
+      value:
+        - key: JAVA_OPTS
+          value: "-Xmx3072m"
+    runAfter:
+      - canary-analyze
+    conditions:
+      - conditionRef: manual-judge2

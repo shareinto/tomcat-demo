@@ -3,18 +3,27 @@ kind: Task
 metadata:
   annotations:
     luckincoffee.com/cd-type: k8s
-  name: k8s-deploy
+  name: deploy
 spec:
+  inputs:
+    resources:
+    - name: webImage
+      type: image
+    params:
+    - name: application
+      description: application name
+    - name: environment
+      description: the environment which is going to deploy
+    - name: command
+      description: the container entrypoint
+    - name: args
+      description: the container args
+    - name: envs
+      description: the container envs
   steps:
     - name: deployment
       image: ubuntu
       command:
         - echo
       args:
-        - "create deployment"
-    - name: ingress
-      image: ubuntu
-      command:
-        - echo
-      args:
-        - "create ingress"
+        - "apply deployment by merging PR in config repo,repo url example https://git.luckincoffee.com/luckin-devops/${inputs.params.environment.value}-${inputs.params.application.value},image is ${inputs.resources.wegImage.url}"

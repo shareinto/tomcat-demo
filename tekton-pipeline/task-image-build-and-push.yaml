@@ -1,0 +1,74 @@
+---
+# This demo modifies the cluster (deploys to it) you must use a service
+# account with permission to admin the cluster (or make your default user an admin
+# of the `default` namespace with default-cluster-admin).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+---
+# This task is currently hardcoding a index.json file instead of 
+# building an image since kaniko and other easy to use tools don't
+# support exporting this file yet
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: image-build-and-push
+spec:
+  inputs:
+    params:
+      - name: artifacts-repo
+        descriptions: artifacts-repo
+  outputs:
+    resources:
+    - name: builtImage
+      type: image
+      outputImageDir: /workspace/sourcerepo
+  steps:
+  - name: download-artifacts
+    image: ubuntu
+    command:
+      - echo
+    args:
+      - "download artifacts from ${inputs.params.artifacts-repo.value}"
+  - name: build-and-push
+    image: busybox
+    command:
+    - /bin/sh
+    args:
+    - -ce
+    - |
+      set -e
+      cat <<EOF > ${outputs.resources.builtImage.outputImageDir}/index.json
+      {
+        "schemaVersion": 2,
+        "manifests": [
+          {
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "size": 314,
+            "digest": "sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5"
+          }
+        ]
+      }
+      EOF
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: run-image-build-and-push
+spec:
+  taskRef:
+    name: image-build-and-push
+  outputs:
+    resources:
+    - name: builtImage
+      resourceRef:
+        name: image-tomcat-demo

@@ -1,0 +1,42 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  annotations:
+    luckincoffee.com/cd-type: k8s
+  name: build-artifacts
+spec:
+  inputs:
+    params:
+    - name: artifacts-repo
+      description: artifacts-repo
+    resources:
+    - name: gitspace
+      type: git
+  steps:
+  - name: test-and-package
+    image: ubuntu
+    command: ["mvn"]
+    args: ["package"]
+  - name: upload
+    image: ubuntu
+    command:
+      - echo
+    args:
+      - "upload to ${inputs.params.artifacts-repo.value}"
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  name: run-build-artifacts
+spec:
+  inputs:
+    params:
+    - name: artifacts-repo
+      value: "luckincoffee.com/nexus/tomcatdemo"
+    resources:    
+    - name: gitspace
+      resourceRef:
+        name: rules-branch
+  taskRef:
+    name: build-artifacts
